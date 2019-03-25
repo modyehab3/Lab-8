@@ -1,0 +1,405 @@
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+
+//Function #1 Printing the play board:
+
+void printBoard(char board[][26], int n){
+
+    int i = 0, row = 0, col = 0;
+    char start = 'a';
+
+    printf("  ");
+    for(i = 0; i < n; i++){
+        printf("%c", start + i);
+     
+    }                                           // Prints the letter indeces for the columns
+    printf("\n");        
+
+    for (row = 0; row < n; row++){
+     
+         printf("%c ", start + row);            // Prints the letter index for each column
+         
+         for(col = 0; col < n; col++){
+            printf("%c", board[row][col]);
+         }                                      // Prints all columns for a particular row
+         
+         printf("\n");
+    }                                           // This loop cycles through the rows
+
+
+}
+
+
+// Function #2 find the numeric index of an inputted letter position:
+int numIndex(char c){              
+    char startingValue = 'a';
+    return (int) (c - startingValue);
+}
+
+
+
+// Function #3 find the letter position of an inputted numeric index:
+char charIndex(int num){  
+    return (char) ('a' + num);
+}
+
+
+
+
+// Function #4 set intermediate board configuration
+void setBoard(char board[][26], int n){          
+
+    int row = 0, col = 0;
+    for (row = 0; row < n; row++){
+         for (col = 0; col < n; col++){
+              if( ((row == n/2 - 1)&&(col == n/2 - 1)) || ((row == n/2) && (col == n/2)) ){
+                board[row][col] = 'W';
+              }
+              else if ( ((row == n/2 - 1)&&(col == n/2)) || ((row == n/2)&&(col == n/2 -1)) ){
+                board[row][col] = 'B';
+              }
+              else{
+                board[row][col] = 'U';
+              }
+         }
+     
+    }
+
+
+}
+
+
+
+
+// Function #5 check to see if position is in bounds
+bool positionInBounds(int n, int row, int col){
+    return (row >= 0 && row < (n) && col >= 0 && col < (n));
+
+}
+
+
+
+// Function #6 checks if move is legal in a particular direction specified by deltaRow and deltaCol
+bool checkLegalInDirection( char board[][26], int n, int row, int col, char colour, int deltaRow, int deltaCol){
+   
+    if (deltaRow == 0 && deltaCol == 0){                                                        // Retun false when both increments are 0 becasue there is
+        return false;                                                                           // no such diretion.
+    }
+   
+    int step = 1;
+    char oppColour;
+    if (colour == 'W'){
+        oppColour = 'B';
+    }
+    else {
+        oppColour = 'W';
+    }
+     
+    bool check = positionInBounds(n, row + (step + 1)*deltaRow, col + (step + 1)*deltaCol);     // Checks to see if within the specified direction
+    if (!check){                                                                                // the next two spaces are within bounds. If they are not
+        return false;                                                                           // within bounds of the board, the player cannot play the move for
+    }                                                                                           // that direction.
+
+    while (board[row + step*deltaRow][col + step*deltaCol] == oppColour){                       // If the next place within the direction line is of opposite colour
+                                                                                                // keep checking. If not, then the move is not valid for the direction
+     
+         char next = board[row + (step + 1)*deltaRow][col + (step + 1)*deltaCol];               // Stores second place in line into variable next
+         if (next == colour){
+            return true;                                                                        // If second place in line has a tile of player's color, then move is valid
+         }
+         
+         if (next == 'U'){                                                                      // If second place in line is empty, move is invalid in that direction
+            return false;
+         }
+                               
+         step++;                                                                                    // If n + 1 th place in line is of the same color
+         bool check = positionInBounds(n, row + (step + 1)*deltaRow, col + (step + 1)*deltaCol);    // then increment step by one to check the n + 2 th place
+         if (!check){
+            return false;                                                                           // If the n + 2 th place is out of bounds, then move is invalid in
+         }                                                                                          // that direction.
+     
+    }
+
+    return false;
+ 
+}
+
+
+
+
+// Function #7 checks to see if a move is valid
+bool checkValidMove( char board[][26], int n, int row, int col, char colour){
+
+    if (board[row][col] != 'U'){
+        return false;
+    }
+
+    int deltaRow = -1, deltaCol = -1;
+    bool check;
+    for (deltaRow = -1; deltaRow <= 1; deltaRow++){
+         for (deltaCol = -1; deltaCol <= 1; deltaCol++){
+              check = checkLegalInDirection(board, n, row, col, colour, deltaRow, deltaCol);
+              if (check){
+                return true;
+              }
+         }
+         
+    }
+     return false;
+
+
+}
+
+
+
+
+// Function #8 for requesting input from the user
+bool getInput(char board[][26], int n, char human, char* ptrRow, char* ptrCol){
+
+    printf("Enter move for colour %c (RowCol): ", human);
+
+    scanf(" %c%c", ptrRow, ptrCol);
+
+    if (!checkValidMove(board, n, numIndex(*ptrRow), numIndex(*ptrCol), human)){
+         printf("Invalid move.\n");
+         return false;
+    }
+     return true;
+
+}
+
+
+// Function #9 flip function
+void flip(char board[][26], int n, int row, int col, char colour){
+
+    int deltaRow, deltaCol = -1, step = 1;
+
+    for(deltaRow = -1; deltaRow <= 1; deltaRow++){
+     for(deltaCol = -1; deltaCol <= 1; deltaCol++){
+      if(checkLegalInDirection(board, n, row, col, colour, deltaRow, deltaCol)){
+          step = 1;
+       while(board[row + step*deltaRow][col + step*deltaCol] != colour){
+        board[row + step*deltaRow][col + step*deltaCol] = colour;
+        step++;
+       
+       }
+      }
+     }
+    }
+
+
+}
+
+
+// Function #10: checking available moves function:
+bool checkAvailableMoves(char board[][26], int n, char colour){
+
+    int row = 0, col = 0;
+    for(row = 0; row < n; row++){
+         for(col = 0; col < n; col++){
+              if (checkValidMove(board, n, row, col,colour)){
+                return true;
+              }
+         }    
+    }
+
+    return false;
+
+}
+
+
+
+//Function 11: assigns a score to a particular move. assumes user enters a valid move. So move must have been checked first
+int calculateMoveScore(char board[][26], int n, int row, int col, char colour){
+
+    int deltaRow, deltaCol = -1, step = 1, score = 0;
+
+    for(deltaRow = -1; deltaRow <= 1; deltaRow++){
+         for(deltaCol = -1; deltaCol <= 1; deltaCol++){
+              if(checkLegalInDirection(board, n, row, col, colour, deltaRow, deltaCol)){
+                    step = 1;
+                    while(board[row + step*deltaRow][col + step*deltaCol] != colour){
+                        score++;
+                        step++;
+                   
+                   }
+              }
+         }
+    }
+
+    return score;
+}
+
+
+
+//Function : makes computer play
+bool computerPlay(char board[][26], int n, int* ptrRowPlay, int* ptrColPlay, char compcolour){
+
+    int row = 0, col = 0, newScore = 0, oldScore = 0;
+    bool canPlay = false;
+
+    for(row = 0; row < n; row++){
+         for(col = 0; col < n; col++){
+              if(checkValidMove(board, n, row, col, compcolour)){
+                   canPlay = true;
+                   newScore = calculateMoveScore(board, n, row, col, compcolour);
+                   if(newScore > oldScore){
+                        oldScore = newScore;
+                        *ptrRowPlay = row;
+                        *ptrColPlay = col;
+                   }
+              }
+         }
+    }
+
+    return canPlay;
+
+}
+
+
+int checkWinner(char board[][26], int n, char compColour, char humanColour){
+
+    int compCount = 0, humanCount = 0, row = 0, col = 0;
+    for (row = 0; row < n; row++){
+         for (col = 0; col < n; col++){
+              if (board[row][col] == compColour){
+               compCount ++;
+          }
+          else if (board[row][col] == humanColour){
+            humanCount ++;
+          }
+         }
+    }
+
+    if (compCount > humanCount){
+        return -1;
+    }
+
+    if (humanCount > compCount){
+        return 1;
+    }
+
+    else{
+        return 0;
+    }
+}
+
+
+
+bool checkGameOver(char board[][26], int n, int* ptrWinner, int totalTurns, char compColour, char humanColour){
+
+    bool gameOver = false;
+     if( (!checkAvailableMoves(board, n, 'W') && !checkAvailableMoves(board, n, 'B')) || (totalTurns == n*n) ){
+          gameOver = true;
+          *ptrWinner = checkWinner(board, n, compColour, humanColour);
+     }
+     return gameOver;
+}
+
+
+
+//Funcion XX: Player switch function
+char switchPlayer(char currentPlayer){
+
+    char nextPlayer = 0;
+    if (currentPlayer == 'W'){
+     nextPlayer = 'B';
+    }
+
+    else{
+     nextPlayer = 'W';
+    }
+
+    return nextPlayer;
+}
+
+
+int main(void){
+
+    int n = 0;
+    printf("Enter the board dimension: ");
+    scanf("%d", &n);
+    char board[26][26];
+    char comp = 0, human = 0;
+    printf("Computer plays (B/W): ");
+    scanf(" %c", &comp);
+    if (comp == 'B'){
+        human = 'W';
+    }
+    else{
+        human = 'B';
+    }
+
+    setBoard(board, n);
+    printBoard(board, n);
+
+    bool gameOver = false;
+    char humanRow, humanCol;
+    int compRow, compCol;
+    int totalTurns = 0, turn = 0;
+    int winner = 0;
+
+    if (comp == 'B'){                                                                   // If computer is black, set turn to -1 to allow computer loop to begin
+        turn = -1;
+    }                                                                                   // Computer is -1; human is 1;
+    else{
+        turn = 1;                                                                       // if computer is not balck, set turn to 1 to allow human to begin. Black alwasy starts
+    }
+       
+    while (!gameOver){
+     
+         if (turn == 1){                                                                    // Human turn
+              if(checkAvailableMoves(board, n, human)){
+                   bool check = getInput(board, n, human, &humanRow, &humanCol);
+                   
+                   if(check){
+                        board[numIndex(humanRow)][numIndex(humanCol)] = human;
+                        flip(board, n, numIndex(humanRow), numIndex(humanCol), human);
+                        printBoard(board, n);
+                   }
+                   else{
+                        printf("%c player wins.\n", comp);
+                        return 0;
+                   }
+               
+              }
+              else{
+                printf("%c player has no valid move.\n", human);
+              }
+         }
+
+
+         if (turn == -1){
+              if(computerPlay(board, n, &compRow, &compCol, comp)){                                             // Computer's turn
+                   printf("Computer places %c at %c%c.\n", comp, charIndex(compRow), charIndex(compCol));
+                   board[compRow][compCol] = comp;
+                   flip(board, n, compRow, compCol, comp);
+                    printBoard(board, n);
+              }
+              else{
+                printf("%c player has no valid move.\n", comp);
+              }
+
+         
+         }
+         
+
+         
+         totalTurns ++;
+         gameOver = checkGameOver(board,n, &winner, totalTurns, comp, human);
+         turn *= -1;
+    }
+
+    if (winner == -1){
+        printf("%c player wins.\n", comp);
+    }
+    else if (winner == 1){
+        printf("%c player wins.\n", human);
+    }
+    else{
+        printf("Draw!\n");
+    }
+
+    return 0;
+}
