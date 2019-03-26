@@ -1,0 +1,442 @@
+
+
+#define CORNER_SCORE 100
+#define EDGE_SCORE 40
+#define CORNER_ENABLING_SCORE 
+
+
+void resetBoard (char newBoard[][26], char originalBoard[][26], int n){
+	
+	int row = 0, col = 0;
+	for (row = 0; row < n; row++){
+		for(col = 0; col < n; col++){
+			newBoard[row][col] = originalBoard[row][col];
+		}
+		
+	}
+	
+}
+
+
+/********************************************************************************************************************************/
+//Functions that check to see if my ability to win is higher:
+
+int flipCount(char board[][26], int n, int row, int col, char colour){
+	
+	int deltaRow, deltaCol = -1, step = 1, score = 0;
+	
+	for(deltaRow = -1; deltaRow <= 1; deltaRow++){
+		for(deltaCol = -1; deltaCol <= 1; deltaCol++){
+			if(checkLegalInDirection(board, n, row, col, colour, deltaRow, deltaCol)){
+				while(board[row + step*deltaRow][col + step*deltaCol] != colour){
+					score++;
+					step++;
+					
+				}
+			}
+		}
+	}
+
+	return score;
+}
+
+
+
+int countCornerScore(int n, int row, int col){
+	
+	if( (row == 0 && col == 0) || (row == n-1 && col == n-1) || (row == 0 && col == n) || (row = n-1 && col == 0) ){
+		return CORNER_SCORE;
+	}
+	return 0;
+	
+}
+
+int countEdgeScore(int n, int row, int col){
+	
+	if (row == 0 || row == n-1 || col == 0 || col == n-1){
+		return EDGE_SCORE;
+		
+	}
+	return 0;
+	
+}
+
+int countCornerEnablingScore(char scratchboard[][26], int n, int rowPlay, int colPlay, char colour){ // assumes n is at least 6
+	
+	scratchboard[rowPlay][colPlay] = colour;
+	flip(scratchboard, n, rowPlay, colPlay, colour);
+	
+	int score = 0;
+	int row = 0, col = 0;
+	int i = 0;
+	int j = 0;
+	
+	
+	
+	for (i = 0; i <= 1; i++){
+		
+		for (j = 0; j<=1; j++){
+			
+			for (col = 0 + j*(n-3); col < 3 + j*(n-3); col++){
+				if(scratchboard[2 + i*(n-5)][col] == colour){
+					score += CORNER_ENABLING_SCORE;
+				}
+			}
+
+			for (row = 0 + j*(n-2); row < 2+j*(n-2); row++){
+				if(scratchboard[row][2+ i*(n-5)] == colour){
+					score += CORNER_ENABLING_SCORE;
+				}
+			}
+			
+		}
+	}
+
+
+	return score;
+}
+
+
+
+int getBulkSize(char board[][26], int n, char colour){
+	
+	
+	int row = 0, col = 0;
+
+	
+	
+	// Following is for top left corner:
+	int bulkSize1 = 0;
+	int oldRowCount = 0, oldColCount = 0;
+	int rowCount = n - 1 , colCount = n - 1;
+	
+	int i = 0;
+	do{ 
+		oldRowCount = rowCount;
+		oldColCount = colCount;
+		if (board[i][i] == colour){
+			rowCount = i, colCount = i;
+			 bulkSize1 += 1;
+			while (board[i][col] == colour && (col < oldColCount || (col == oldColCount && col <= oldRowCount))){				//Checks tiles down the row
+				col = i + 1;
+				if(board[i][col] == colour){
+					colCount ++;
+					bulkSize1 += 1;
+				}
+				
+			}
+			
+			while (board[row][i] == colour && (row < oldRowCount || (row == oldRowCount && row <= oldColCount))){				//Checks tiles down the row
+				row = i + 1;
+				if(board[row][i] == colour){
+					colCount ++;
+					bulkSize1 += 1;
+				}
+				
+			}
+		}
+		i++;
+	}while(board[i][i] == colour);
+	
+	
+	
+//	Top right corner:
+
+	int bulkSize2 = 0;
+	oldRowCount = 0, oldColCount = 0;
+	rowCount = n - 1, colCount = 0;
+	
+	i = 0;
+	do{ 
+		oldRowCount = rowCount;
+		oldColCount = colCount;
+		if (board[i][n - i] == colour){
+			rowCount = i, colCount = i;
+			 bulkSize2 += 1;
+			while (board[i][col] == colour && (col < n - oldColCount || (col == n  - oldColCount && col <= oldRowCount))){				//Checks tiles down the row
+				col = i + 1;
+				if(board[i][col] == colour){
+					colCount ++;
+					bulkSize2 += 1;
+				}
+				
+			}
+			
+			while (board[row][i] == colour && (row < oldRowCount || (row == oldRowCount && row <= n - oldColCount))){				//Checks tiles down the row
+				row = i + 1;
+				if(board[row][i] == colour){
+					colCount ++;
+					bulkSize2 += 1;
+				}
+				
+			}
+		}
+		i++;
+	}while(board[i][ n - i] == colour);
+	
+	
+	//	Bottom left corner:
+	int bulkSize3 = 0;
+	oldRowCount = 0, oldColCount = 0;
+	rowCount = 0, colCount = n - 1;
+	
+	
+	i = 0;
+	do{ 
+		oldRowCount = rowCount;
+		oldColCount = colCount;
+		if (board[n - i][i] == colour){
+			rowCount = i, colCount = i;
+			 bulkSize3 += 1;
+			while (board[i][col] == colour && (col < oldColCount || (col == oldColCount && col <= n - oldRowCount))){				//Checks tiles down the row
+				col = i + 1;
+				if(board[i][col] == colour){
+					colCount ++;
+					bulkSize3 += 1;
+				}
+				
+			}
+			
+			while (board[row][i] == colour && (row < n - oldRowCount || (row == n - oldRowCount && row <= oldColCount))){				//Checks tiles down the row
+				row = i + 1;
+				if(board[row][i] == colour){
+					colCount ++;
+					bulkSize3 += 1;
+				}
+				
+			}
+		}
+		i++;
+	}while(board[n - i][i] == colour);
+	
+	
+	//	Bottom right corner:
+	int bulkSize4 = 0;
+	oldRowCount = 0, oldColCount = 0;
+	rowCount = n - 1, colCount = n - 1;
+	
+	
+	i = 0;
+	do{ 
+		oldRowCount = rowCount;
+		oldColCount = colCount;
+		if (board[n - i][ n - i] == colour){
+			rowCount = i, colCount = i;
+			 bulkSize4 += 1;
+			while (board[i][col] == colour && (col < n - oldColCount || (col == n - oldColCount && col <= n - oldRowCount))){				//Checks tiles down the row
+				col = i + 1;
+				if(board[i][col] == colour){
+					colCount ++;
+					bulkSize4 += 1;
+				}
+				
+			}
+			
+			while (board[row][i] == colour && (row < n - oldRowCount || (row == n - oldRowCount && row <= n - oldColCount))){				//Checks tiles down the row
+				row = i + 1;
+				if(board[row][i] == colour){
+					colCount ++;
+					bulkSize4 += 1;
+				}
+				
+			}
+		}
+		i++;
+	}while(board[n - i][n - i] == colour);
+	
+	
+	return bulkSize1 + bulkSize2 + bulkSize3 + bulkSize4;
+	
+}
+
+
+
+int countBulkIncreaseScore(char scratchBoard[][26], int n, int row, int col, char colour){
+	
+	int factor = 2; // need to decide on
+	
+	int bulk1 = getBulkSize(scratchBoard, n, colour);
+	scratchBoard[row][col] = colour;
+	flip(scratchBoard, n, row, col, colour);
+	int bulk2 = getBulkSize(scratchBoard, n, colour);
+	
+	int deltaBulk = bulk2 - bulk1;
+	
+	return deltaBulk*factor;
+	
+	
+}
+
+/*****************************************************************************************************************************************************************/
+
+
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+
+
+/****************************************************************************************************************************************************************/
+//Funtions that check if opponent has a better chance of winning
+
+int countHumanCornerGiving(char scratchboard[][26], int n, int rowPlay, int colPlay, char compcolour, char humanColour){
+	
+	
+	int cornerCount = 0;
+	scratchboard[rowPlay][colPlay] = compcolour;
+	flip(scratchboard, n, rowPlay, colPlay, compcolour);
+	
+	int i = 0, j = 0;
+	
+	while ( j <= n - 1){
+		
+		i = 0;
+		while ( i <= n - 1){
+			if (checkValidMove(scratchboard, n, i, j, humanColour)){
+				cornerCount ++;
+			}
+			i += n - 1;
+		}
+		j += n - 1;
+	}
+	
+	return (-30)*cornerCount;
+}
+
+
+
+int humanFlipCount(char scratchboard[][26], int n, int rowPlay, int colPlay, char compcolour, char humanColour){
+	
+	scratchboard[rowPlay][colPlay] = compcolour;
+	flip(scratchboard, n, rowPlay, colPlay, compcolour);
+	int score = 0 , tempscore = 0;
+	
+	int row = 0, col = 0;
+	for (row = 0; row < n; row++){
+		for(col = 0; col < n; col ++){
+			if(checkValidMove(scratchboard, n, row, col, humanColour)){
+				tempscore = flipCount(scratchboard, n, row, col, humanColour);
+				if(tempscore >= score){
+					score = tempscore;
+				}
+			}
+			
+		}
+	}
+	
+	return -score; 
+	
+	
+	
+}
+
+
+
+
+
+/********************************************************************************************************************************/
+
+
+
+
+double smartScore(char board[][26], int n, int row, int col, char compColour, char humanColour, int gameTurn){
+	
+	char scratchBoard [26][26] = {0};
+	resetBoard(scratchBoard, board, n);
+	int flipscore = flipCount(board, n, row, col, compColour);
+	int cornerScore = countCornerScore(n, row, col);
+	int edgeScore = countEdgeScore(n, row, col);
+	int cornerEnablingScore = countCornerEnablingScore(scratchBoard, n, row, col, compColour);
+	resetBoard(scratchBoard, board, n);
+	int bulkIncreaseScore = countBulkIncreaseScore(scratchBoard, n, row, col, compColour);
+	
+	resetBoard(scratchBoard, board, n);
+	int humanCornerGiving = countHumanCornerGiving(scratchBoard, n, row, col, compColour, humanColour);
+	resetBoard(scratchBoard, board, n);
+	int humanFlipScore = humanFlipCount(scratchBoard, n, row, col, compColour, humanColour);
+	
+	int c1 = , c2 = , c3 = , c4 = , c5 = , c6 = , c7 = ;
+	
+	return c1*flipscore + c2*cornerScore + c3*edgeScore + c4*cornerEnablingScore + c5*bulkIncreaseScore + c6*humanCornerGiving + c7*humanFlipScore;
+	
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Junk code:
+
+	/*	int i = 0;
+		
+		if(colCount >= rowCount){
+			for(i = 1; i < rowCount; i++){
+				for(col = 1; col < colCount - i; col++){
+					
+					if(board[i][col] == colour){
+						bulkSize ++;
+					}
+					else{
+						break;
+					}
+					
+				}
+			}
+		}
+		
+		else{
+			for(i = 1; i < colCount; i++){
+				for(row = 1; row < colCount - i; row++){
+					
+					if(board[row][i] == colour){
+						bulkSize ++;
+					}
+					else{
+						break;
+					}
+					
+				}
+			}
+		}*/
