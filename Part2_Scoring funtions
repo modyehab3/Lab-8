@@ -1,8 +1,11 @@
+#include <stdio.h>
+#include <stdbool.h>
+#include <lab8part1.c>
 
 
 #define CORNER_SCORE 100
 #define EDGE_SCORE 40
-#define CORNER_ENABLING_SCORE 
+#define CORNER_ENABLING_SCORE 30
 
 
 void resetBoard (char newBoard[][26], char originalBoard[][26], int n){
@@ -18,9 +21,37 @@ void resetBoard (char newBoard[][26], char originalBoard[][26], int n){
 }
 
 
+// Function #4 set intermediate board configuration
+void setIntermediate(char board[][26]){         
+    printf("Enter board configuration:\n");
+    char c1 = 0, c2 = 0, c3 = 0;
+    do{
+    
+         scanf("\n%c%c%c", &c1, &c2, &c3);                      // Scans input from the user
+        
+         if (c1 != '!' && c2 != '!' && c3 != '!'){
+              if (c1 == '!' || c2 == '!' || c3 == '!'){         // Checks for invalid input
+                printf("Invalid move.");
+              }
+              else if(!(c1 == 'B' || c1 == 'W')){
+                printf("Invalid move.");                        // Checks for invalid input
+              }
+              else {
+                board[numIndex(c2)][numIndex(c3)] = c1;         // Places a tile of the indicated color in the indicated position
+              }
+         }
+    
+    }while(!(c1 == '!' && c2 == '!' && c3 == '!'));             // Keep requesting for input until user enters !!!
+
+}
+
+
 /********************************************************************************************************************************/
 //Functions that check to see if my ability to win is higher:
 
+
+
+// Counts how many tiles I can flip in this move
 int flipCount(char board[][26], int n, int row, int col, char colour){
 	
 	int deltaRow, deltaCol = -1, step = 1, score = 0;
@@ -28,6 +59,7 @@ int flipCount(char board[][26], int n, int row, int col, char colour){
 	for(deltaRow = -1; deltaRow <= 1; deltaRow++){
 		for(deltaCol = -1; deltaCol <= 1; deltaCol++){
 			if(checkLegalInDirection(board, n, row, col, colour, deltaRow, deltaCol)){
+                step = 1;
 				while(board[row + step*deltaRow][col + step*deltaCol] != colour){
 					score++;
 					step++;
@@ -346,7 +378,7 @@ int humanFlipCount(char scratchboard[][26], int n, int rowPlay, int colPlay, cha
 
 double smartScore(char board[][26], int n, int row, int col, char compColour, char humanColour, int gameTurn){
 	
-	char scratchBoard [26][26] = {0};
+	char scratchBoard [26][26] = {{0}};
 	resetBoard(scratchBoard, board, n);
 	int flipscore = flipCount(board, n, row, col, compColour);
 	int cornerScore = countCornerScore(n, row, col);
@@ -360,7 +392,7 @@ double smartScore(char board[][26], int n, int row, int col, char compColour, ch
 	resetBoard(scratchBoard, board, n);
 	int humanFlipScore = humanFlipCount(scratchBoard, n, row, col, compColour, humanColour);
 	
-	int c1 = , c2 = , c3 = , c4 = , c5 = , c6 = , c7 = ;
+	int c1 = 1, c2 = 1, c3 = 1, c4 = 1, c5 = 1, c6 = 1, c7 = 1;
 	
 	return c1*flipscore + c2*cornerScore + c3*edgeScore + c4*cornerEnablingScore + c5*bulkIncreaseScore + c6*humanCornerGiving + c7*humanFlipScore;
 	
