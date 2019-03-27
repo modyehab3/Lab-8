@@ -8,8 +8,10 @@
 
 
 #define CORNER_SCORE 100
-#define EDGE_SCORE 40
-#define CORNER_ENABLING_SCORE 30
+#define EDGE_SCORE 30
+#define CORNER_ENABLING_SCORE 40
+#define CORNER_GIVING -100
+
 
 
 //Function #1 Printing the play board:
@@ -21,7 +23,7 @@ void printBoard(char board[][26], int n){
 
     printf("  ");
     for(i = 0; i < n; i++){
-        printf("%c", start + i);
+        printf("%c ", start + i);
      
     }                                           // Prints the letter indeces for the columns
     printf("\n");        
@@ -31,7 +33,7 @@ void printBoard(char board[][26], int n){
          printf("%c ", start + row);            // Prints the letter index for each column
          
          for(col = 0; col < n; col++){
-            printf("%c", board[row][col]);
+            printf("%c ", board[row][col]);
          }                                      // Prints all columns for a particular row
          
          printf("\n");
@@ -371,7 +373,7 @@ int flipCount(char board[][26], int n, int row, int col, char colour){
 		}
 	}
 
-	return score;
+	return score;    //returns number of tiles this move will flip
 }
 
 
@@ -409,7 +411,7 @@ int countCornerEnablingScore(char scratchboard[][26], int n, int rowPlay, int co
 	
 	for (i = 0; i <= 1; i++){
 		
-		for (j = 0; j<=1; j++){
+		for (j = 0; j <= 1; j++){
 			
 			for (col = 0 + j*(n-3); col < 3 + j*(n-3); col++){
 				if(scratchboard[2 + i*(n-5)][col] == colour){
@@ -430,159 +432,140 @@ int countCornerEnablingScore(char scratchboard[][26], int n, int rowPlay, int co
 	return score;
 }
 
+int cornerGiving(int n, int rowPlay, int colPlay){
+    \
+    
+    if ( (rowPlay == 1 && colPlay == 1) || (rowPlay == n-2 && colPlay == 1)  || (rowPlay == 1 && colPlay == n-2)  || (rowPlay == n-2 && colPlay == n-2)){
+        return CORNER_GIVING;
+    }
+    
+    return 0;
+    
+}
+
+
+bool checkBulkTileDirection (char board [][26], int n, char colour, int row, int col, int deltaRow, int deltaCol){
+    
+
+    while (board[row][col] == colour){
+        
+        if(row < 0 || row > n -1 || col < 0 || col > n - 1){
+            return true;
+        
+        }
+        
+        row += deltaRow;
+        col += deltaCol;
+    
+    }
+    
+    return false;
+    
+}
+
+
+bool checkLegalBulktile (char board[][26], int n, int cornerRow, int cornerCol, int row, int col, char colour){
+    
+    int deltaRow, deltaCol;
+    if  (cornerRow == 0){
+        deltaRow = -1;
+    }
+    
+    else {
+        deltaRow = 1;
+    }
+    
+    
+    
+    if (cornerCol == 0){
+        
+        deltaCol = -1;
+    }
+    
+    else {
+        deltaCol = 1;
+    }
+    
+    bool check1 = checkBulkTileDirection(board, n, colour, row, col, deltaRow, 0); // checks horizontal enclosure
+    bool check2 = checkBulkTileDirection(board, n, colour, row, col, 0, deltaCol); // checks vertical enclosure
+    bool check3 = checkBulkTileDirection(board, n, colour, row, col, deltaRow, deltaCol); // checks enclosure towards corner
+    
+    if (check1 && check2 && check3){
+        
+        bool check4 = checkBulkTileDirection(board, n, colour, row, col, -deltaRow, deltaCol);
+        bool check5 = checkBulkTileDirection(board, n, colour, row, col, deltaRow, -deltaCol);
+        if (check4 || check5){
+            
+            return true;
+        }
+
+        
+    }
+    
+    return false;
+    
+}
+
+
+
+
+
 
 
 int getBulkSize(char board[][26], int n, char colour){
 	
 	
 	int row = 0, col = 0;
+    int bulkSize1 = 0, bulkSize2 = 0, bulkSize3 = 0, bulkSize4 = 0;
+    
+    int cornerRow = 0, cornerCol = 0;
+    for (row = 0; row < n; row ++){
+        for(col = 0; col < n; col++){
+            if (checkLegalBulktile(board, n, cornerRow, cornerCol, row, col, colour)){
+                bulkSize1 ++;
+            }
+            
+        }
+    }
+	
 
-	
-	
-	// Following is for top left corner:
-	int bulkSize1 = 0;
-	int oldRowCount = 0, oldColCount = 0;
-	int rowCount = n  , colCount = n ;
-	
-	int i = 0;
-	do{ 
-		oldRowCount = rowCount;
-		oldColCount = colCount;
-		if (board[i][i] == colour){
-			rowCount = i, colCount = i;
-			 col = i;
-			while (board[i][col] == colour && (col < oldColCount || (col == oldColCount && col < oldRowCount)) ){				//Checks tiles down the row
+    cornerRow = n, cornerCol = 0;
+    for (row = n - 1; row >= 0; row --){
+        for(col = 0; col < n; col++){
+            if (checkLegalBulktile(board, n, cornerRow, cornerCol, row, col, colour)){
+                bulkSize2 ++;
+            }
+            
+        }
+    }
+    
+    
+    cornerRow = 0, cornerCol = n;
+    for (row = 0; row < n; row ++){
+        for(col = n - 1; col >= 0; col--){
+            if (checkLegalBulktile(board, n, cornerRow, cornerCol, row, col, colour)){
+                bulkSize3 ++;
+            }
+            
+        }
+    }
 
-					if(col!=i){
-						colCount ++;
-					}
-					
-					bulkSize1 += 1;
-				
-				col += 1;
-				
-			}
-			
-			row = i + 1;
-			while (board[row][i] == colour && (row < oldRowCount || (row == oldRowCount && row <= oldColCount))){				//Checks tiles down the row
-				
-					rowCount ++;
-					bulkSize1 += 1;
-				row ++;
-				
-			}
-		}
-		i++;
-	}while(board[i][i] == colour);
-	
-	
-	
-//	Top right corner:
-/*
-	int bulkSize2 = 0;
-	oldRowCount = 0, oldColCount = 0;
-	rowCount = n - 1, colCount = 0;
-	
-	i = 0;
-	do{ 
-		oldRowCount = rowCount;
-		oldColCount = colCount;
-		if (board[i][n - i] == colour){
-			rowCount = i, colCount = i;
-			 bulkSize2 += 1;
-			while (board[i][col] == colour && (col < n - oldColCount || (col == n  - oldColCount && col <= oldRowCount))){				//Checks tiles down the row
-				col = i + 1;
-				if(board[i][col] == colour){
-					colCount ++;
-					bulkSize2 += 1;
-				}
-				
-			}
-			
-			while (board[row][i] == colour && (row < oldRowCount || (row == oldRowCount && row <= n - oldColCount))){				//Checks tiles down the row
-				row = i + 1;
-				if(board[row][i] == colour){
-					colCount ++;
-					bulkSize2 += 1;
-				}
-				
-			}
-		}
-		i++;
-	}while(board[i][ n - i] == colour);
-	
-	
-	//	Bottom left corner:
-	int bulkSize3 = 0;
-	oldRowCount = 0, oldColCount = 0;
-	rowCount = 0, colCount = n - 1;
-	
-	
-	i = 0;
-	do{ 
-		oldRowCount = rowCount;
-		oldColCount = colCount;
-		if (board[n - i][i] == colour){
-			rowCount = i, colCount = i;
-			 bulkSize3 += 1;
-			while (board[i][col] == colour && (col < oldColCount || (col == oldColCount && col <= n - oldRowCount))){				//Checks tiles down the row
-				col = i + 1;
-				if(board[i][col] == colour){
-					colCount ++;
-					bulkSize3 += 1;
-				}
-				
-			}
-			
-			while (board[row][i] == colour && (row < n - oldRowCount || (row == n - oldRowCount && row <= oldColCount))){				//Checks tiles down the row
-				row = i + 1;
-				if(board[row][i] == colour){
-					colCount ++;
-					bulkSize3 += 1;
-				}
-				
-			}
-		}
-		i++;
-	}while(board[n - i][i] == colour);
-	
-	
-	//	Bottom right corner:
-	int bulkSize4 = 0;
-	oldRowCount = 0, oldColCount = 0;
-	rowCount = n - 1, colCount = n - 1;
-	
-	
-	i = 0;
-	do{ 
-		oldRowCount = rowCount;
-		oldColCount = colCount;
-		if (board[n - i][ n - i] == colour){
-			rowCount = i, colCount = i;
-			 bulkSize4 += 1;
-			while (board[i][col] == colour && (col < n - oldColCount || (col == n - oldColCount && col <= n - oldRowCount))){				//Checks tiles down the row
-				col = i + 1;
-				if(board[i][col] == colour){
-					colCount ++;
-					bulkSize4 += 1;
-				}
-				
-			}
-			
-			while (board[row][i] == colour && (row < n - oldRowCount || (row == n - oldRowCount && row <= n - oldColCount))){				//Checks tiles down the row
-				row = i + 1;
-				if(board[row][i] == colour){
-					colCount ++;
-					bulkSize4 += 1;
-				}
-				
-			}
-		}
-		i++;
-	}while(board[n - i][n - i] == colour);
-*/	
-	
-	return bulkSize1 ;//+ bulkSize2 + bulkSize3 + bulkSize4;
+
+
+    cornerRow = n, cornerCol = n;
+    for (row = n - 1; row >= 0; row --){
+        for(col = n - 1; col >= 0; col--){
+            if (checkLegalBulktile(board, n, cornerRow, cornerCol, row, col, colour)){
+                bulkSize4 ++;
+            }
+            
+        }
+    }
+    
+    
+    
+    return (bulkSize1 + bulkSize2 + bulkSize3 + bulkSize4);
+    
 	
 }
 
@@ -590,7 +573,7 @@ int getBulkSize(char board[][26], int n, char colour){
 
 int countBulkIncreaseScore(char scratchBoard[][26], int n, int row, int col, char colour){
 	
-	int factor = 2; // need to decide on
+
 	
 	int bulk1 = getBulkSize(scratchBoard, n, colour);
 	scratchBoard[row][col] = colour;
@@ -599,7 +582,7 @@ int countBulkIncreaseScore(char scratchBoard[][26], int n, int row, int col, cha
 	
 	int deltaBulk = bulk2 - bulk1;
 	
-	return deltaBulk*factor;
+	return deltaBulk;
 	
 	
 }
@@ -637,12 +620,12 @@ int countHumanCornerGiving(char scratchboard[][26], int n, int rowPlay, int colP
 			if (checkValidMove(scratchboard, n, i, j, humanColour)){
 				cornerCount ++;
 			}
-			i += n - 1;
+			i += (n - 1);
 		}
-		j += n - 1;
+		j += (n - 1);
 	}
 	
-	return (-30)*cornerCount;
+	return cornerCount*CORNER_ENABLING_SCORE;
 }
 
 
@@ -666,7 +649,7 @@ int humanFlipCount(char scratchboard[][26], int n, int rowPlay, int colPlay, cha
 		}
 	}
 	
-	return -score; 
+	return score; 
 	
 	
 	
@@ -689,6 +672,7 @@ int smartScore(char board[][26], int n, int row, int col, char compColour, char 
 	int cornerScore = countCornerScore(n, row, col);
 	int edgeScore = countEdgeScore(n, row, col);
 	int cornerEnablingScore = countCornerEnablingScore(scratchBoard, n, row, col, compColour);
+    int cornerLosing = cornerGiving(n, row, col);
 	resetBoard(scratchBoard, board, n);
 	int bulkIncreaseScore = countBulkIncreaseScore(scratchBoard, n, row, col, compColour);
 	
@@ -697,89 +681,16 @@ int smartScore(char board[][26], int n, int row, int col, char compColour, char 
 	resetBoard(scratchBoard, board, n);
 	int humanFlipScore = humanFlipCount(scratchBoard, n, row, col, compColour, humanColour);
 	
-	int c1 = 1, c2 = 1, c3 = 1, c4 = 1, c5 = 1, c6 = 1, c7 = 1;
+	int c1 = 1, c4 = 1, c5 = 7, c7 = -1;
     
     
-	
-	return c1*n*flipscore + c2*cornerScore + c3*edgeScore + c4*cornerEnablingScore + c5*bulkIncreaseScore + c6*humanCornerGiving + c7*humanFlipScore;
+	if(gameTurn > n*n - 7){
+        c1 *= 2;
+    }
+	return c1*flipscore + cornerScore + edgeScore + c4*cornerEnablingScore + cornerLosing +  c5*bulkIncreaseScore - humanCornerGiving + c7*humanFlipScore;
 	
 	
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Junk code:
-
-	/*	int i = 0;
-		
-		if(colCount >= rowCount){
-			for(i = 1; i < rowCount; i++){
-				for(col = 1; col < colCount - i; col++){
-					
-					if(board[i][col] == colour){
-						bulkSize ++;
-					}
-					else{
-						break;
-					}
-					
-				}
-			}
-		}
-		
-		else{
-			for(i = 1; i < colCount; i++){
-				for(row = 1; row < colCount - i; row++){
-					
-					if(board[row][i] == colour){
-						bulkSize ++;
-					}
-					else{
-						break;
-					}
-					
-				}
-			}
-		}*/
-
 
 
 
@@ -859,7 +770,7 @@ bool computerPlay(char board[][26], int n, int* ptrRowPlay, int* ptrColPlay, cha
          for(col = 0; col < n; col++){
               if(checkValidMove(board, n, row, col, compColour)){
                    canPlay = true;
-                   newScore = minimax(board, n, row, col, 4, INT_MIN, INT_MAX, false, compColour, humanColour, gameTurnCounter);
+                   newScore = minimax(board, n, row, col, 0, INT_MIN, INT_MAX, false, compColour, humanColour, gameTurnCounter);
                    if(newScore > oldScore){
                         oldScore = newScore;
                         *ptrRowPlay = row;
@@ -955,6 +866,37 @@ int main(void){
 	else{
 		printf("Draw!\n");
 	}
-	
-	return 0;
+    
+    
+ /*   char board[26][26];
+    setBoard(board,8);
+    setIntermediate(board);
+    int scoreBoard [26][26] = {{0}};
+    int i, j;
+    for (i = 0; i < 8; i++){
+        for(j = 0; j < 8; j++){
+            if (checkValidMove(board, 8, i, j, 'W')){
+                scoreBoard[i][j] = smartScore(board, 8, i, j, 'W', 'B', 3);
+            }
+        }
+        
+    }
+    
+	printBoard(board, 8);
+    printf("\n\n\n");
+    
+    for (i = 0; i < 8; i++){
+     
+          // Prints the letter index for each column
+         
+         for(j = 0; j < 8; j++){
+            printf(" %d", scoreBoard[i][j]);
+         }                                      // Prints all columns for a particular row
+         
+         printf("\n");
+    }
+    printf("\n");
+	return 0;*/
+    
+    return 0;
 }
