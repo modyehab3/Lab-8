@@ -164,11 +164,11 @@ bool checkValidMove( char board[][26], int n, int row, int col, char colour){
 
 
 // Function #8 for requesting input from the user
-bool getInput(char board[][26], int n, char human, int* ptrRow, int* ptrCol){
+bool getInput(char board[][26], int n, char human, char* ptrRow, char* ptrCol){
 
     printf("Enter move for colour %c (RowCol): ", human);
 
-    scanf(" %d%d", ptrRow, ptrCol);
+    scanf(" %c%c", ptrRow, ptrCol);
 
     if (!checkValidMove(board, n, numIndex(*ptrRow), numIndex(*ptrCol), human)){
          printf("Invalid move.\n");
@@ -894,7 +894,7 @@ int main(void){
     printBoard(board, n);
 	
 	bool gameOver = false;
-	int humanRow, humanCol;
+	char humanRow, humanCol;
 	int compRow, compCol;
 	int totalTurns = 0, turn = 0;
 	int winner = 0;
