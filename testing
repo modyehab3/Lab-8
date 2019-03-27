@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
+#include "lab8part2lib.h"
 
 
 #define CORNER_SCORE 100
@@ -697,8 +698,10 @@ int smartScore(char board[][26], int n, int row, int col, char compColour, char 
 	int humanFlipScore = humanFlipCount(scratchBoard, n, row, col, compColour, humanColour);
 	
 	int c1 = 1, c2 = 1, c3 = 1, c4 = 1, c5 = 1, c6 = 1, c7 = 1;
+    
+    
 	
-	return c1*flipscore + c2*cornerScore + c3*edgeScore + c4*cornerEnablingScore + c5*bulkIncreaseScore + c6*humanCornerGiving + c7*humanFlipScore;
+	return c1*n*flipscore + c2*cornerScore + c3*edgeScore + c4*cornerEnablingScore + c5*bulkIncreaseScore + c6*humanCornerGiving + c7*humanFlipScore;
 	
 	
 }
@@ -894,7 +897,7 @@ int main(void){
     printBoard(board, n);
 	
 	bool gameOver = false;
-	char humanRow, humanCol;
+	int humanRow, humanCol;
 	int compRow, compCol;
 	int totalTurns = 0, turn = 0;
 	int winner = 0;
@@ -910,15 +913,11 @@ int main(void){
 		totalTurns ++;
 		if (turn == 1){
 			if(checkAvailableMoves(board, n, human)){
-				bool check = getInput(board, n, human, &humanRow, &humanCol);
-				if(check){
-					board[numIndex(humanRow)][numIndex(humanCol)] = human;
-					flip(board, n, numIndex(humanRow), numIndex(humanCol), human);
-				}
-				else{
-					printf("%c player wins.\n", comp);
-					return 0;
-				}
+				findSmartestMove(board, n, human, &humanRow, &humanCol);
+					board[humanRow][humanCol] = human;
+					flip(board, n, humanRow, humanCol, human);
+				 printf("\nTesting AI is (row/col): %c%c\n", humanRow + 'a', humanCol + 'a');
+				
 				
 			}
 			else{
