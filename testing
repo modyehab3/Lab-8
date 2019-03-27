@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
+
 
 #define CORNER_SCORE 100
 #define EDGE_SCORE 40
@@ -161,11 +163,11 @@ bool checkValidMove( char board[][26], int n, int row, int col, char colour){
 
 
 // Function #8 for requesting input from the user
-bool getInput(char board[][26], int n, char human, char* ptrRow, char* ptrCol){
+bool getInput(char board[][26], int n, char human, int* ptrRow, int* ptrCol){
 
     printf("Enter move for colour %c (RowCol): ", human);
 
-    scanf(" %c%c", ptrRow, ptrCol);
+    scanf(" %d%d", ptrRow, ptrCol);
 
     if (!checkValidMove(board, n, numIndex(*ptrRow), numIndex(*ptrCol), human)){
          printf("Invalid move.\n");
@@ -785,7 +787,7 @@ int minimax (char board[][26], int n, int row, int col, int depth, int bestPossi
 		if (depth == 0 || checkGameOver(board, n, &winner, gameTurnCounter, compColour, humanColour)){
 			return smartScore(board, n, row, col, compColour, humanColour, gameTurnCounter);
 		}
-		gameTurnCounter--;
+		gameTurnCounter++;
 		
 		int score = 0;
 		char scratchBoard[26][26];
@@ -794,19 +796,21 @@ int minimax (char board[][26], int n, int row, int col, int depth, int bestPossi
 		if(maxPlayer){
 			int maxScore = INT_MIN;
 			int i = 0, j = 0;
+            scratchBoard[row][col] = humanColour;
 			
 			while(i < n){
 				while(j < n){
 					if (checkValidMove(scratchBoard, n, i, j, compColour)){
-						scratchBoard[row][col] = humanColour;
+						
 						score = minimax(scratchBoard, n, i, j, depth - 1, bestPossibleScore, worstPossibleScore, false, compColour, humanColour, gameTurnCounter);
 						maxScore = fmax(maxScore, score);
 						bestPossibleScore = fmax(bestPossibleScore, score);
 						if (worstPossibleScore <= bestPossibleScore){
 							break;
 						}
-						j++;
+						
 					}
+                    j++;
 				}
 				i++;
 				
@@ -817,11 +821,12 @@ int minimax (char board[][26], int n, int row, int col, int depth, int bestPossi
 		else {
 			int minScore = INT_MAX;
 			int i = 0, j = 0;
+            scratchBoard[row][col] = compColour;
 			
 			while(i < n){
 				while(j < n){
 					if (checkValidMove(scratchBoard, n, i, j, humanColour)){
-						scratchBoard[row][col] = compColour;
+						
 						score = minimax(scratchBoard, n, i, j, depth - 1, bestPossibleScore, worstPossibleScore, true, compColour, humanColour, gameTurnCounter);
 						minScore = fmin (minScore, score);
 						worstPossibleScore = fmin(worstPossibleScore, score);
@@ -850,7 +855,7 @@ bool computerPlay(char board[][26], int n, int* ptrRowPlay, int* ptrColPlay, cha
          for(col = 0; col < n; col++){
               if(checkValidMove(board, n, row, col, compColour)){
                    canPlay = true;
-                   newScore = minimax(board, n, row, col, 2, INT_MIN, INT_MAX, false, compColour, humanColour, gameTurnCounter);
+                   newScore = minimax(board, n, row, col, 4, INT_MIN, INT_MAX, false, compColour, humanColour, gameTurnCounter);
                    if(newScore > oldScore){
                         oldScore = newScore;
                         *ptrRowPlay = row;
@@ -874,7 +879,7 @@ int main(void){
 	printf("Enter board dimension: ");
     scanf("%d", &n);
 	char board[26][26];
-	char comp = NULL, human = NULL;
+	char comp = 0, human = 0;
 	printf("Computer plays (B/W): ");
 	scanf(" %c", &comp);
 	if (comp == 'B'){
@@ -888,7 +893,7 @@ int main(void){
     printBoard(board, n);
 	
 	bool gameOver = false;
-	char humanRow, humanCol;
+	int humanRow, humanCol;
 	int compRow, compCol;
 	int totalTurns = 0, turn = 0;
 	int winner = 0;
@@ -905,7 +910,6 @@ int main(void){
 		if (turn == 1){
 			if(checkAvailableMoves(board, n, human)){
 				bool check = getInput(board, n, human, &humanRow, &humanCol);
-				
 				if(check){
 					board[numIndex(humanRow)][numIndex(humanCol)] = human;
 					flip(board, n, numIndex(humanRow), numIndex(humanCol), human);
