@@ -292,21 +292,6 @@ bool checkGameOver(char board[][26], int n, int* ptrWinner, int totalTurns, char
 
 
 
-//Funcion XX: Player switch function
-char switchPlayer(char currentPlayer){
-
-    char nextPlayer = 0;
-    if (currentPlayer == 'W'){
-     nextPlayer = 'B';
-    }
-
-    else{
-     nextPlayer = 'W';
-    }
-
-    return nextPlayer;
-}
-
 
 
 
@@ -380,7 +365,16 @@ int flipCount(char board[][26], int n, int row, int col, char colour){
 
 int countCornerScore(char board[][26], int n, int row, int col, char colour){
 	
-	if( ((row == 0 && col == 0) || (row == n-1 && col == n-1) || (row == 0 && col == n -1) || (row = n-1 && col == 0)) && board[row][col] != colour){
+	if (row == 0 && col == 0 && board[0][0] != colour){
+		return CORNER_SCORE;
+	}
+    if (row == 0 && col == n-1 && board[0][n-1] != colour){
+		return CORNER_SCORE;
+	}
+    if (row == n-1 && col == 0 && board[n-1][0] != colour){
+		return CORNER_SCORE;
+	}
+    if (row == n-1 && col == n-1 && board[n-1][n-1] != colour){
 		return CORNER_SCORE;
 	}
 	return 0;
@@ -435,7 +429,51 @@ int countCornerEnablingScore(char scratchboard[][26], int n, int rowPlay, int co
 int cornerGiving(char board[][26], int n, int rowPlay, int colPlay, char oppColour){
     \
     
-    if ( (rowPlay == 1 && colPlay == 1 && board[0][0] != oppColour) || (rowPlay == n-2 && colPlay == 1 && board[n-1][0] != oppColour)  || (rowPlay == 1 && colPlay == n-2 && board[0][n-1] != oppColour)  || (rowPlay == n-2 && colPlay == n-2 && board[n-1][n-1] != oppColour)){
+    if  (rowPlay == 1 && colPlay == 1 && board[0][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == 0 && colPlay == 1 && board[0][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == 1 && colPlay == 0 && board[0][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == 1 && colPlay == n-2 && board[0][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == 0 && colPlay == n-2 && board[0][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+
+    if  (rowPlay == 1 && colPlay == n-1 && board[0][n-1] != oppColour){
+        return CORNER_GIVING;
+    }    
+    
+    if  (rowPlay == n-2 && colPlay == 1 && board[n-1][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == n-2 && colPlay == 0 && board[n-1][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == n-1 && colPlay == 1 && board[n-1][0] != oppColour){
+        return CORNER_GIVING;
+    }
+            
+    if  (rowPlay == n-2 && colPlay == n-2 && board[n-1][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == n-1 && colPlay == n-2 && board[n-1][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == n-2 && colPlay == n-1 && board[n-1][n-1] != oppColour){
         return CORNER_GIVING;
     }
     
@@ -759,7 +797,7 @@ int minimax (char board[][26], int n, int row, int col, int depth, int bestPossi
 					}
 					j++;
 				}
-				i ++;
+				i++;
 			}
             if(!check){
                 return 0;
@@ -802,6 +840,7 @@ bool computerPlay(char board[][26], int n, int* ptrRowPlay, int* ptrColPlay, cha
 
 int main(void){
 
+    
     int n = 0;
 	printf("Enter board dimension: ");
     scanf("%d", &n);
@@ -818,7 +857,7 @@ int main(void){
 	
 	setBoard(board, n);
     printBoard(board, n);
-	
+
 	bool gameOver = false;
 	int humanRow, humanCol;
 	int compRow, compCol;
@@ -833,6 +872,10 @@ int main(void){
 	}
     
 	while (!gameOver){
+        
+        if(totalTurns == n*n/2){
+            exit(0);
+        }
 		totalTurns ++;
 		if (turn == 1){
 			if(checkAvailableMoves(board, n, human)){
@@ -864,7 +907,7 @@ int main(void){
                     int i, j;
                     for (i = 0; i < 8; i++){
                         for(j = 0; j < 8; j++){
-                            if (checkValidMove(board, 8, i, j, comp)){
+                            if (checkValidMove(board, n, i, j, comp)){
                                 scoreBoard[i][j] = smartScore(board, 8, i, j, comp, human, totalTurns);
                                 cornerCountBoard[i][j] = countCornerScore(board, n, i, j, comp);
                                 edgeCountuntBoard[i][j] = countEdgeScore(board, n, i, j, comp);
@@ -877,7 +920,7 @@ int main(void){
                                 humanCornerBoard[i][j] = countHumanCornerGiving(scratchBoard, n, i, j, comp, human);
                                 resetBoard(scratchBoard, board, n);
                                 humanFlipBoard[i][j] = humanFlipCount(scratchBoard, n, i, j, comp, human);
-                                MiniMaxBoard[i][i] = minimax(board, n, i, j, 2, INT_MIN, INT_MAX, false, comp, human, totalTurns);
+                                MiniMaxBoard[i][i] = minimax(board, n, i, j, 0, INT_MIN, INT_MAX, false, comp, human, totalTurns);
                                 
                                 
                             }
@@ -888,12 +931,12 @@ int main(void){
                     
                     printf("\n\n");
                     
-                    for (i = 0; i < 8; i++){
+                    for (i = 0; i < n; i++){
                      
                           // Prints the letter index for each column
                          
-                         for(j = 0; j < 8; j++){
-                            printf(" %d", MiniMaxBoard[i][j]);
+                         for(j = 0; j < n; j++){
+                            printf(" %d", cornerCountBoard[i][j]);
                          }                                      // Prints all columns for a particular row
                          
                          printf("\n");
