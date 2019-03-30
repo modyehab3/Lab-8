@@ -1,0 +1,1013 @@
+
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <math.h>
+#include <limits.h>
+#include "lab8part2lib.h"
+
+
+#define CORNER_SCORE 400
+#define EDGE_SCORE 30
+#define CORNER_ENABLING_SCORE 20
+#define CORNER_GIVING -300
+
+
+
+//Function #1 Printing the play board:
+
+void printBoard(char board[][26], int n){
+
+    int i = 0, row = 0, col = 0;
+    char start = 'a';
+
+    printf("  ");
+    for(i = 0; i < n; i++){
+        printf("%c ", start + i);
+     
+    }                                           // Prints the letter indeces for the columns
+    printf("\n");        
+
+    for (row = 0; row < n; row++){
+     
+         printf("%c ", start + row);            // Prints the letter index for each column
+         
+         for(col = 0; col < n; col++){
+            printf("%c ", board[row][col]);
+         }                                      // Prints all columns for a particular row
+         
+         printf("\n");
+    }                                           // This loop cycles through the rows
+
+
+}
+
+
+// Function #2 find the numeric index of an inputted letter position:
+int numIndex(char c){              
+    char startingValue = 'a';
+    return (int) (c - startingValue);
+}
+
+
+
+// Function #3 find the letter position of an inputted numeric index:
+char charIndex(int num){  
+    return (char) ('a' + num);
+}
+
+
+
+
+// Function #4 set intermediate board configuration
+void setBoard(char board[][26], int n){          
+
+    int row = 0, col = 0;
+    for (row = 0; row < n; row++){
+         for (col = 0; col < n; col++){
+              if( ((row == n/2 - 1)&&(col == n/2 - 1)) || ((row == n/2) && (col == n/2)) ){
+                board[row][col] = 'W';
+              }
+              else if ( ((row == n/2 - 1)&&(col == n/2)) || ((row == n/2)&&(col == n/2 -1)) ){
+                board[row][col] = 'B';
+              }
+              else{
+                board[row][col] = 'U';
+              }
+         }
+     
+    }
+
+
+}
+
+
+
+
+// Function #5 check to see if position is in bounds
+bool positionInBounds(int n, int row, int col){
+    return (row >= 0 && row < (n) && col >= 0 && col < (n));
+
+}
+
+
+
+// Function #6 checks if move is legal in a particular direction specified by deltaRow and deltaCol
+bool checkLegalInDirection( char board[][26], int n, int row, int col, char colour, int deltaRow, int deltaCol){
+   
+    if (deltaRow == 0 && deltaCol == 0){                                                        // Retun false when both increments are 0 becasue there is
+        return false;                                                                           // no such diretion.
+    }
+   
+    int step = 1;
+    char oppColour;
+    if (colour == 'W'){
+        oppColour = 'B';
+    }
+    else {
+        oppColour = 'W';
+    }
+     
+    bool check = positionInBounds(n, row + (step + 1)*deltaRow, col + (step + 1)*deltaCol);     // Checks to see if within the specified direction
+    if (!check){                                                                                // the next two spaces are within bounds. If they are not
+        return false;                                                                           // within bounds of the board, the player cannot play the move for
+    }                                                                                           // that direction.
+
+    while (board[row + step*deltaRow][col + step*deltaCol] == oppColour){                       // If the next place within the direction line is of opposite colour
+                                                                                                // keep checking. If not, then the move is not valid for the direction
+     
+         char next = board[row + (step + 1)*deltaRow][col + (step + 1)*deltaCol];               // Stores second place in line into variable next
+         if (next == colour){
+            return true;                                                                        // If second place in line has a tile of player's color, then move is valid
+         }
+         
+         if (next == 'U'){                                                                      // If second place in line is empty, move is invalid in that direction
+            return false;
+         }
+                               
+         step++;                                                                                    // If n + 1 th place in line is of the same color
+         bool check = positionInBounds(n, row + (step + 1)*deltaRow, col + (step + 1)*deltaCol);    // then increment step by one to check the n + 2 th place
+         if (!check){
+            return false;                                                                           // If the n + 2 th place is out of bounds, then move is invalid in
+         }                                                                                          // that direction.
+     
+    }
+
+    return false;
+ 
+}
+
+
+
+
+// Function #7 checks to see if a move is valid
+bool checkValidMove( char board[][26], int n, int row, int col, char colour){
+
+    if (board[row][col] != 'U'){
+        return false;
+    }
+
+    int deltaRow = -1, deltaCol = -1;
+    bool check;
+    for (deltaRow = -1; deltaRow <= 1; deltaRow++){
+         for (deltaCol = -1; deltaCol <= 1; deltaCol++){
+              check = checkLegalInDirection(board, n, row, col, colour, deltaRow, deltaCol);
+              if (check){
+                return true;
+              }
+         }
+         
+    }
+     return false;
+
+
+}
+
+
+
+
+// Function #8 for requesting input from the user
+bool getInput(char board[][26], int n, char human, char* ptrRow, char* ptrCol){
+
+    printf("Enter move for colour %c (RowCol): ", human);
+
+    scanf(" %c%c", ptrRow, ptrCol);
+
+    if (!checkValidMove(board, n, numIndex(*ptrRow), numIndex(*ptrCol), human)){
+         printf("Invalid move.\n");
+         return false;
+    }
+     return true;
+
+}
+
+
+// Function #9 flip function
+void flip(char board[][26], int n, int row, int col, char colour){
+
+    int deltaRow, deltaCol = -1, step = 1;
+
+    for(deltaRow = -1; deltaRow <= 1; deltaRow++){
+     for(deltaCol = -1; deltaCol <= 1; deltaCol++){
+      if(checkLegalInDirection(board, n, row, col, colour, deltaRow, deltaCol)){
+          step = 1;
+       while(board[row + step*deltaRow][col + step*deltaCol] != colour){
+        board[row + step*deltaRow][col + step*deltaCol] = colour;
+        step++;
+       
+       }
+      }
+     }
+    }
+
+
+}
+
+
+// Function #10: checking available moves function:
+bool checkAvailableMoves(char board[][26], int n, char colour){
+
+    int row = 0, col = 0;
+    for(row = 0; row < n; row++){
+         for(col = 0; col < n; col++){
+              if (checkValidMove(board, n, row, col,colour)){
+                return true;
+              }
+         }    
+    }
+
+    return false;
+
+}
+
+
+
+
+
+
+
+//Function : makes computer play
+/*bool computerPlay(char board[][26], int n, int* ptrRowPlay, int* ptrColPlay, char compcolour){
+
+    int row = 0, col = 0, newScore = 0, oldScore = 0;
+    bool canPlay = false;
+
+    for(row = 0; row < n; row++){
+         for(col = 0; col < n; col++){
+              if(checkValidMove(board, n, row, col, compcolour)){
+                   canPlay = true;
+                   newScore = calculateMoveScore(board, n, row, col, compcolour);
+                   if(newScore > oldScore){
+                        oldScore = newScore;
+                        *ptrRowPlay = row;
+                        *ptrColPlay = col;
+                   }
+              }
+         }
+    }
+
+    return canPlay;
+
+}*/
+
+
+int checkWinner(char board[][26], int n, char compColour, char humanColour){
+
+    int compCount = 0, humanCount = 0, row = 0, col = 0;
+    for (row = 0; row < n; row++){
+         for (col = 0; col < n; col++){
+              if (board[row][col] == compColour){
+               compCount ++;
+          }
+          else if (board[row][col] == humanColour){
+            humanCount ++;
+          }
+         }
+    }
+
+    if (compCount > humanCount){
+        return -1;
+    }
+
+    if (humanCount > compCount){
+        return 1;
+    }
+
+    else{
+        return 0;
+    }
+}
+
+
+
+bool checkGameOver(char board[][26], int n, int* ptrWinner, int totalTurns, char compColour, char humanColour){
+
+    bool gameOver = false;
+     if( (!checkAvailableMoves(board, n, 'W') && !checkAvailableMoves(board, n, 'B')) || (totalTurns == n*n) ){
+          gameOver = true;
+          *ptrWinner = checkWinner(board, n, compColour, humanColour);
+     }
+     return gameOver;
+}
+
+
+
+
+
+
+
+
+void resetBoard (char newBoard[][26], char originalBoard[][26], int n){
+	
+	int row = 0, col = 0;
+	for (row = 0; row < n; row++){
+		for(col = 0; col < n; col++){
+			newBoard[row][col] = originalBoard[row][col];
+		}
+		
+	}
+	
+}
+
+
+// Function #4 set intermediate board configuration
+void setIntermediate(char board[][26]){         
+    printf("Enter board configuration:\n");
+    char c1 = 0, c2 = 0, c3 = 0;
+    do{
+    
+         scanf("\n%c%c%c", &c1, &c2, &c3);                      // Scans input from the user
+        
+         if (c1 != '!' && c2 != '!' && c3 != '!'){
+              if (c1 == '!' || c2 == '!' || c3 == '!'){         // Checks for invalid input
+                printf("Invalid move.");
+              }
+              else if(!(c1 == 'B' || c1 == 'W')){
+                printf("Invalid move.");                        // Checks for invalid input
+              }
+              else {
+                board[numIndex(c2)][numIndex(c3)] = c1;         // Places a tile of the indicated color in the indicated position
+              }
+         }
+    
+    }while(!(c1 == '!' && c2 == '!' && c3 == '!'));             // Keep requesting for input until user enters !!!
+
+}
+
+
+/********************************************************************************************************************************/
+//Functions that check to see if my ability to win is higher:
+
+
+
+// Counts how many tiles I can flip in this move
+int flipCount(char board[][26], int n, int row, int col, char colour){
+	
+	int deltaRow, deltaCol = -1, step = 1, score = 0;
+	
+	for(deltaRow = -1; deltaRow <= 1; deltaRow++){
+		for(deltaCol = -1; deltaCol <= 1; deltaCol++){
+			if(checkLegalInDirection(board, n, row, col, colour, deltaRow, deltaCol)){
+                step = 1;
+				while(board[row + step*deltaRow][col + step*deltaCol] != colour){
+					score++;
+					step++;
+					
+				}
+			}
+		}
+	}
+
+	return score;    //returns number of tiles this move will flip
+}
+
+
+
+int countCornerScore(char board[][26], int n, int row, int col, char colour){
+	
+	if (row == 0 && col == 0 && board[0][0] != colour){
+		return CORNER_SCORE;
+	}
+    if (row == 0 && col == n-1 && board[0][n-1] != colour){
+		return CORNER_SCORE;
+	}
+    if (row == n-1 && col == 0 && board[n-1][0] != colour){
+		return CORNER_SCORE;
+	}
+    if (row == n-1 && col == n-1 && board[n-1][n-1] != colour){
+		return CORNER_SCORE;
+	}
+	return 0;
+	
+}
+
+int countEdgeScore(char board[][26], int n, int row, int col, char colour){
+	
+	if ((row == 0 || row == n-1 || col == 0 || col == n-1) && board[row][col] != colour){
+		return EDGE_SCORE;
+		
+	}
+	return 0;
+	
+}
+
+int countCornerEnablingScore(char scratchboard[][26], int n, int rowPlay, int colPlay, char colour){ // assumes n is at least 6
+	
+	scratchboard[rowPlay][colPlay] = colour;
+	flip(scratchboard, n, rowPlay, colPlay, colour);
+	
+	int score = 0;
+	int row = 0, col = 0;
+	int i = 0;
+	int j = 0;
+	
+	
+	
+	for (i = 0; i <= 1; i++){
+		
+		for (j = 0; j <= 1; j++){
+			
+			for (col = 0 + j*(n - 3); col < 3 + j*(n-3); col++){
+				if(scratchboard[2 + i*(n-5)][col] == colour && scratchboard[i*n][j*n] != colour){
+					score += CORNER_ENABLING_SCORE;
+				}
+			}
+
+			for (row = 0 + j*(n-2); row < 2+j*(n-2); row++){
+				if(scratchboard[row][2+ i*(n-5)] == colour && scratchboard[i*n][j*n] != colour){
+					score += CORNER_ENABLING_SCORE;
+				}
+			}
+			
+		}
+	}
+
+
+	return score;
+}
+
+int cornerGiving(char board[][26], int n, int rowPlay, int colPlay, char oppColour){
+    \
+    
+    if  (rowPlay == 1 && colPlay == 1 && board[0][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == 0 && colPlay == 1 && board[0][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == 1 && colPlay == 0 && board[0][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == 1 && colPlay == n-2 && board[0][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == 0 && colPlay == n-2 && board[0][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+
+    if  (rowPlay == 1 && colPlay == n-1 && board[0][n-1] != oppColour){
+        return CORNER_GIVING;
+    }    
+    
+    if  (rowPlay == n-2 && colPlay == 1 && board[n-1][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == n-2 && colPlay == 0 && board[n-1][0] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == n-1 && colPlay == 1 && board[n-1][0] != oppColour){
+        return CORNER_GIVING;
+    }
+            
+    if  (rowPlay == n-2 && colPlay == n-2 && board[n-1][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == n-1 && colPlay == n-2 && board[n-1][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    if  (rowPlay == n-2 && colPlay == n-1 && board[n-1][n-1] != oppColour){
+        return CORNER_GIVING;
+    }
+    
+    return 0;
+    
+}
+
+
+bool checkBulkTileDirection (char board [][26], int n, char colour, int row, int col, int deltaRow, int deltaCol){
+    
+
+    while (board[row][col] == colour){
+        
+        if(row < 0 || row > n -1 || col < 0 || col > n - 1){
+            return true;
+        
+        }
+        
+        row += deltaRow;
+        col += deltaCol;
+    
+    }
+    
+    return false;
+    
+}
+
+
+bool checkLegalBulktile (char board[][26], int n, int cornerRow, int cornerCol, int row, int col, char colour){
+    
+    int deltaRow, deltaCol;
+    if  (cornerRow == 0){
+        deltaRow = -1;
+    }
+    
+    else {
+        deltaRow = 1;
+    }
+    
+    
+    
+    if (cornerCol == 0){
+        
+        deltaCol = -1;
+    }
+    
+    else {
+        deltaCol = 1;
+    }
+    
+    bool check1 = checkBulkTileDirection(board, n, colour, row, col, deltaRow, 0); // checks horizontal enclosure
+    bool check2 = checkBulkTileDirection(board, n, colour, row, col, 0, deltaCol); // checks vertical enclosure
+    bool check3 = checkBulkTileDirection(board, n, colour, row, col, deltaRow, deltaCol); // checks enclosure towards corner
+    
+    if (check1 && check2 && check3){
+        
+        bool check4 = checkBulkTileDirection(board, n, colour, row, col, -deltaRow, deltaCol);
+        bool check5 = checkBulkTileDirection(board, n, colour, row, col, deltaRow, -deltaCol);
+        if (check4 || check5){
+            
+            return true;
+        }
+
+        
+    }
+    
+    return false;
+    
+}
+
+
+
+
+
+
+
+int getBulkSize(char board[][26], int n, char colour){
+	
+	
+	int row = 0, col = 0;
+    int bulkSize1 = 0, bulkSize2 = 0, bulkSize3 = 0, bulkSize4 = 0;
+    
+    int cornerRow = 0, cornerCol = 0;
+    for (row = 0; row < n; row ++){
+        for(col = 0; col < n; col++){
+            if (checkLegalBulktile(board, n, cornerRow, cornerCol, row, col, colour)){
+                bulkSize1 ++;
+            }
+            
+        }
+    }
+	
+
+    cornerRow = n, cornerCol = 0;
+    for (row = n - 1; row >= 0; row --){
+        for(col = 0; col < n; col++){
+            if (checkLegalBulktile(board, n, cornerRow, cornerCol, row, col, colour)){
+                bulkSize2 ++;
+            }
+            
+        }
+    }
+    
+    
+    cornerRow = 0, cornerCol = n;
+    for (row = 0; row < n; row ++){
+        for(col = n - 1; col >= 0; col--){
+            if (checkLegalBulktile(board, n, cornerRow, cornerCol, row, col, colour)){
+                bulkSize3 ++;
+            }
+            
+        }
+    }
+
+
+
+    cornerRow = n, cornerCol = n;
+    for (row = n - 1; row >= 0; row --){
+        for(col = n - 1; col >= 0; col--){
+            if (checkLegalBulktile(board, n, cornerRow, cornerCol, row, col, colour)){
+                bulkSize4 ++;
+            }
+            
+        }
+    }
+    
+    
+    
+    return (bulkSize1 + bulkSize2 + bulkSize3 + bulkSize4);
+    
+	
+}
+
+
+
+int countBulkIncreaseScore(char scratchBoard[][26], int n, int row, int col, char colour){
+	
+
+	
+	int bulk1 = getBulkSize(scratchBoard, n, colour);
+	scratchBoard[row][col] = colour;
+	flip(scratchBoard, n, row, col, colour);
+	int bulk2 = getBulkSize(scratchBoard, n, colour);
+	
+	int deltaBulk = bulk2 - bulk1;
+	
+	return deltaBulk;
+	
+	
+}
+
+/*****************************************************************************************************************************************************************/
+
+
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+/*****************************************************************************************************************************************************************/
+
+
+/****************************************************************************************************************************************************************/
+//Funtions that check if opponent has a better chance of winning
+
+int countHumanCornerGiving(char scratchboard[][26], int n, int rowPlay, int colPlay, char compcolour, char humanColour){
+	
+	char copyBoard[26][26] = {{0}};
+    resetBoard(copyBoard, scratchboard, n);
+	int cornerCount = 0;
+	scratchboard[rowPlay][colPlay] = compcolour;
+	flip(scratchboard, n, rowPlay, colPlay, compcolour);
+	
+	int i = 0, j = 0;
+	
+	while ( j <= n - 1){
+		
+		i = 0;
+		while ( i <= n - 1){
+			if (checkValidMove(scratchboard, n, i, j, humanColour) && copyBoard[i][j] != humanColour){
+				cornerCount ++;
+			}
+			i += (n - 1);
+		}
+		j += (n - 1);
+	}
+	
+	return cornerCount*CORNER_ENABLING_SCORE;
+}
+
+
+
+int humanFlipCount(char scratchboard[][26], int n, int rowPlay, int colPlay, char compcolour, char humanColour){
+	
+	scratchboard[rowPlay][colPlay] = compcolour;
+	flip(scratchboard, n, rowPlay, colPlay, compcolour);
+	int score = 0 , tempscore = 0;
+	
+	int row = 0, col = 0;
+	for (row = 0; row < n; row++){
+		for(col = 0; col < n; col ++){
+			if(checkValidMove(scratchboard, n, row, col, humanColour)){
+				tempscore = flipCount(scratchboard, n, row, col, humanColour);
+				if(tempscore >= score){
+					score = tempscore;
+				}
+			}
+			
+		}
+	}
+	
+	return score; 
+	
+	
+	
+}
+
+
+
+
+
+/********************************************************************************************************************************/
+
+
+
+
+int smartScore(char board[][26], int n, int row, int col, char compColour, char humanColour, int gameTurn){
+	
+	char scratchBoard [26][26] = {{0}};
+	resetBoard(scratchBoard, board, n);
+	int flipscore = flipCount(board, n, row, col, compColour);
+	int cornerScore = countCornerScore(board, n, row, col, compColour);
+	int edgeScore = countEdgeScore(board, n, row, col, compColour);
+	int cornerEnablingScore = countCornerEnablingScore(scratchBoard, n, row, col, compColour);
+    int cornerLosing = cornerGiving(board, n, row, col, humanColour);
+	resetBoard(scratchBoard, board, n);
+	int bulkIncreaseScore = countBulkIncreaseScore(scratchBoard, n, row, col, compColour);
+	
+	resetBoard(scratchBoard, board, n);
+	int humanCornerGiving = countHumanCornerGiving(scratchBoard, n, row, col, compColour, humanColour);
+	resetBoard(scratchBoard, board, n);
+	int humanFlipScore = humanFlipCount(scratchBoard, n, row, col, compColour, humanColour);
+	
+	int c1 = 1, c4 = 1, c5 = 7, c7 = -1;
+    
+    
+	if(gameTurn > n*n - 7){
+        c1 *= 2;
+    }
+	return flipscore + cornerScore + edgeScore + c4*cornerEnablingScore + cornerLosing +  c5*bulkIncreaseScore - humanCornerGiving + c7*humanFlipScore;
+	
+	
+}
+
+
+
+
+
+int minimax (char board[][26], int n, int row, int col, int depth, int bestPossibleScore, int worstPossibleScore, bool maxPlayer, char compColour, char humanColour, int gameTurnCounter){		// status: true for maximizing player; false for minimizing player
+	
+		int winner = 0;
+		if (depth == 0 || checkGameOver(board, n, &winner, gameTurnCounter, compColour, humanColour)){
+			return smartScore(board, n, row, col, compColour, humanColour, gameTurnCounter);
+		}
+		gameTurnCounter++;
+		
+		int score = 0;
+		char scratchBoard[26][26];
+		resetBoard(scratchBoard, board, n);
+		
+		if(maxPlayer){
+			int maxScore = INT_MIN;
+			int i = 0, j = 0;
+            scratchBoard[row][col] = humanColour;
+            
+            bool check = false;
+			
+			while(i < n){
+				while(j < n){
+					if (checkValidMove(scratchBoard, n, i, j, compColour)){
+						check = true;
+						score = minimax(scratchBoard, n, i, j, depth - 1, bestPossibleScore, worstPossibleScore, false, compColour, humanColour, gameTurnCounter);
+						maxScore = fmax(maxScore, score);
+						bestPossibleScore = fmax(bestPossibleScore, score);
+						if (worstPossibleScore <= bestPossibleScore){
+							break;
+						}
+						
+					}
+                    j++;
+				}
+				i++;
+				
+			}
+            if(!check){
+                return 0;
+            }
+            
+			return maxScore;
+		}
+		
+		else {
+            bool check = 0;
+			int minScore = INT_MAX;
+			int i = 0, j = 0;
+            scratchBoard[row][col] = compColour;
+			
+			while(i < n){
+				while(j < n){
+					if (checkValidMove(scratchBoard, n, i, j, humanColour)){
+						check = true;
+						score = minimax(scratchBoard, n, i, j, depth - 1, bestPossibleScore, worstPossibleScore, true, compColour, humanColour, gameTurnCounter);
+						minScore = fmin (minScore, score);
+						worstPossibleScore = fmin(worstPossibleScore, score);
+						if(worstPossibleScore <= bestPossibleScore){
+							break;
+						}
+					}
+					j++;
+				}
+				i++;
+			}
+            if(!check){
+                return 0;
+            }
+            
+			return minScore;
+		}
+		
+	
+}
+
+
+
+bool computerPlay(char board[][26], int n, int* ptrRowPlay, int* ptrColPlay, char compColour, char humanColour, int gameTurnCounter){
+
+    int row = 0, col = 0, newScore = 0, oldScore = INT_MIN;
+    bool canPlay = false;
+
+    for(row = 0; row < n; row++){
+         for(col = 0; col < n; col++){
+              if(checkValidMove(board, n, row, col, compColour)){
+                   canPlay = true;
+                   newScore = minimax(board, n, row, col, 0, INT_MIN, INT_MAX, false, compColour, humanColour, gameTurnCounter);
+                   if(newScore > oldScore){
+                        oldScore = newScore;
+                        *ptrRowPlay = row;
+                        *ptrColPlay = col;
+                   }
+              }
+         }
+    }
+
+    return canPlay;
+
+}
+
+
+
+
+
+int main(void){
+
+    
+    int n = 0;
+	printf("Enter board dimension: ");
+    scanf("%d", &n);
+	char board[26][26];
+	char comp = 0, human = 0;
+	printf("Computer plays (B/W): ");
+	scanf(" %c", &comp);
+	if (comp == 'B'){
+		human = 'W';
+	}
+	else{
+		human = 'B';
+	}
+	
+	setBoard(board, n);
+    printBoard(board, n);
+
+	bool gameOver = false;
+	char humanRow, humanCol;
+	int compRow, compCol;
+	int totalTurns = 0, turn = 0;
+	int winner = 0;
+	
+	if (comp == 'B'){
+		turn = -1;
+	}
+	else{
+		turn = 1;
+	}
+    
+	while (!gameOver){
+        
+
+		totalTurns ++;
+         if (turn == 1){                                                                // Human turn
+              if(checkAvailableMoves(board, n, human)){                                 // If there is an available move to play...
+                   
+                   bool check = getInput(board, n, human, &humanRow, &humanCol);
+                   
+                   if(check){                                                           
+                        board[numIndex(humanRow)][numIndex(humanCol)] = human;
+                        flip(board, n, numIndex(humanRow), numIndex(humanCol), human);
+                        printBoard(board, n);
+                   }
+                   else{
+                        printf("%c player wins.\n", comp);                              // If player inputs wrong move, they lose
+                        return 0;
+                   }
+               
+              }
+              else{
+                printf("%c player has no valid move.\n", human);                        // If no available move
+              }
+         }
+
+
+		if (turn == -1){
+       /*     
+                    char scratchBoard[26][26] = {{0}};
+                    int scoreBoard [26][26] = {{0}};
+                    int MiniMaxBoard [26][26] = {{0}};
+                    int cornerCountBoard [26][26] = {{0}};
+                    int edgeCountuntBoard [26][26] = {{0}};
+                    int cornerEnablingCountBoard [26][26] = {{0}};
+                    int cornerGivingCountBoard [26][26] = {{0}};
+                    int bulkCountBoard [26][26] = {{0}};
+                    int humanCornerBoard [26][26] = {{0}};
+                    int humanFlipBoard [26][26] = {{0}};
+                    int i, j;
+                    for (i = 0; i < 8; i++){
+                        for(j = 0; j < 8; j++){
+                            if (checkValidMove(board, n, i, j, comp)){
+                                scoreBoard[i][j] = smartScore(board, 8, i, j, comp, human, totalTurns);
+                                cornerCountBoard[i][j] = countCornerScore(board, n, i, j, comp);
+                                edgeCountuntBoard[i][j] = countEdgeScore(board, n, i, j, comp);
+                                resetBoard(scratchBoard, board, n);
+                                cornerEnablingCountBoard [i][j] = countCornerEnablingScore(scratchBoard, n, i, j, comp);
+                                cornerGivingCountBoard [i][j] = cornerGiving(board, n, i, j, human);
+                                resetBoard(scratchBoard, board, n);
+                                bulkCountBoard[i][j] = countBulkIncreaseScore(scratchBoard, n, i, j, comp);
+                                resetBoard(scratchBoard, board, n);
+                                humanCornerBoard[i][j] = countHumanCornerGiving(scratchBoard, n, i, j, comp, human);
+                                resetBoard(scratchBoard, board, n);
+                                humanFlipBoard[i][j] = humanFlipCount(scratchBoard, n, i, j, comp, human);
+                                MiniMaxBoard[i][i] = minimax(board, n, i, j, 0, INT_MIN, INT_MAX, false, comp, human, totalTurns);
+                                
+                                
+                            }
+                        }
+                        
+                    }
+                    
+                    
+                    printf("\n\n");
+                    
+                    for (i = 0; i < n; i++){
+                     
+                          // Prints the letter index for each column
+                         
+                         for(j = 0; j < n; j++){
+                            printf(" %d", cornerCountBoard[i][j]);
+                         }                                      // Prints all columns for a particular row
+                         
+                         printf("\n");
+                    }
+                    printf("\n");*/
+                    
+			if(computerPlay(board, n, &compRow, &compCol, comp, human, totalTurns)){
+				printf("Computer places %c at %c%c.\n", comp, charIndex(compRow), charIndex(compCol));
+				board[compRow][compCol] = comp;
+				flip(board, n, compRow, compCol, comp);
+			}
+			else{
+				printf("%c has no valid move\n", comp);
+			}
+
+        
+		}
+		
+		printBoard(board, n);
+
+		
+		
+		gameOver = checkGameOver(board,n, &winner, totalTurns, comp, human);
+		turn *= -1;
+	}
+	
+	if (winner == -1){
+		printf("%c player wins.\n", comp);
+	}
+	else if (winner == 1){
+		printf("%c player wins.\n", human);
+	}
+	else{
+		printf("Draw!\n");
+	}
+    
+    
+ /*   char board[26][26];
+    setBoard(board,8);
+    setIntermediate(board);
+    int scoreBoard [26][26] = {{0}};
+    int i, j;
+    for (i = 0; i < 8; i++){
+        for(j = 0; j < 8; j++){
+            if (checkValidMove(board, 8, i, j, 'W')){
+                scoreBoard[i][j] = smartScore(board, 8, i, j, 'W', 'B', 3);
+            }
+        }
+        
+    }
+    
+	printBoard(board, 8);
+    printf("\n\n\n");
+    
+    for (i = 0; i < 8; i++){
+     
+          // Prints the letter index for each column
+         
+         for(j = 0; j < 8; j++){
+            printf(" %d", scoreBoard[i][j]);
+         }                                      // Prints all columns for a particular row
+         
+         printf("\n");
+    }
+    printf("\n");
+	return 0;*/
+    
+    return 0;
+}
